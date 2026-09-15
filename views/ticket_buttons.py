@@ -23,7 +23,6 @@ async def create_transcript(self, channel):
         author = f"{msg.author.display_name} ({msg.author.id})"
         content = msg.content or "[No text content]"
 
-        # Track everyone who actually interacted
         if not msg.author.bot:
             user_ids.add(msg.author.id)
 
@@ -54,13 +53,13 @@ async def send_transcript_to_users(
 ):
     sent = 0
     failed = 0
-    sent_users = set()
+    processed_users = set()
 
     for user_id in user_ids:
-        if user_id in sent_users:
+        if user_id in processed_users:
             continue
 
-        sent_users.add(user_id)
+        processed_users.add(user_id)
 
         try:
             user = guild.get_member(user_id)
@@ -117,14 +116,14 @@ async def close(
 
     t_id = row[0]
 
-    # Create transcript before changing/deleting anything
     transcript, user_ids = await self.create_transcript(
         interaction.channel
     )
 
-    # Include ticket creator even if they never sent a message
     if len(row) > 3 and row[3]:
         user_ids.add(row[3])
+
+    user_ids.add(interaction.user.id)
 
     close_ticket(t_id)
 
@@ -175,14 +174,18 @@ async def close(
         name=f"closed-{t_id}"
     )
 
-    await interaction.response.send_message(
-        f"Ticket closed. 📄 Transcript sent to "
-        f"{sent} user(s)."
-        + (
+    message = (
+        f"Ticket closed. 📄 "
+        f"Transcript sent to {sent} user(s)."
+    )
+
+    if failed:
+        message += (
             f" {failed} user(s) could not receive the DM."
-            if failed
-            else ""
-        ),
+        )
+
+    await interaction.response.send_message(
+        message,
         ephemeral=True
     )
 
@@ -270,11 +273,9 @@ async def transcript(
         interaction.channel
     )
 
-    # Always include the ticket creator
     if len(row) > 3 and row[3]:
         user_ids.add(row[3])
 
-    # Also include the person who pressed Transcript
     user_ids.add(interaction.user.id)
 
     sent, failed = await self.send_transcript_to_users(
@@ -284,13 +285,17 @@ async def transcript(
         ticket_id
     )
 
-    await interaction.followup.send(
+    message = (
         f"📄 Transcript sent to {sent} user(s)."
-        + (
+    )
+
+    if failed:
+        message += (
             f" {failed} user(s) could not receive the DM."
-            if failed
-            else ""
-        ),
+        )
+
+    await interaction.followup.send(
+        message,
         ephemeral=True
     )
 
