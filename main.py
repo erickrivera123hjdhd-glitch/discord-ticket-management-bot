@@ -11,7 +11,11 @@ intents = Intents.default()
 intents.members = True
 intents.message_content = True
 
-bot = commands.Bot(command_prefix="!", intents=intents, help_command=None)
+bot = commands.Bot(
+    command_prefix="!",
+    intents=intents,
+    help_command=None
+)
 
 @bot.event
 async def on_ready():
@@ -24,12 +28,15 @@ async def on_ready():
     try:
         if guild_id := os.getenv("DISCORD_GUILD_ID"):
             guild = discord.Object(id=int(guild_id))
-            bot.tree.copy_global_to(guild)
-            await bot.tree.sync(guild)
+
+            bot.tree.copy_global_to(guild=guild)
+            await bot.tree.sync(guild=guild)
+
             print(f"Synced commands to guild {guild_id}")
         else:
             synced = await bot.tree.sync()
             print(f"Synced {len(synced)} command(s) globally")
+
     except Exception as e:
         print(f"Error syncing commands: {e}")
 
