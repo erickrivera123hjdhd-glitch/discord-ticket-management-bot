@@ -1,4 +1,3 @@
-```python
 import io
 import discord
 from discord.ui import View, Button
@@ -30,26 +29,24 @@ class TicketButtonsView(View):
 
             lines.append(f"[{timestamp}] {author}: {content}")
 
-        if not lines:
-            lines.append("No messages found.")
+        return "\n".join(lines) if lines else "No messages found."
 
-        return "\n".join(lines)
 
     @discord.ui.button(
         label="Close",
         style=discord.ButtonStyle.red,
-        custom_id="ticket_close",
+        custom_id="ticket_close"
     )
     async def close(self, interaction: discord.Interaction, button: discord.Button):
         row = get_ticket_by_channel(
             interaction.guild.id,
-            interaction.channel.id,
+            interaction.channel.id
         )
 
         if not row:
             await interaction.response.send_message(
                 "Not a ticket channel.",
-                ephemeral=True,
+                ephemeral=True
             )
             return
 
@@ -59,7 +56,7 @@ class TicketButtonsView(View):
         await interaction.channel.send(
             embed=discord.Embed(
                 description=f"Ticket closed by {interaction.user.mention}",
-                color=discord.Color.red(),
+                color=discord.Color.red()
             )
         )
 
@@ -78,14 +75,14 @@ class TicketButtonsView(View):
             await interaction.channel.set_permissions(
                 creator,
                 read_messages=True,
-                send_messages=True,
+                send_messages=True
             )
 
         if staff_role:
             await interaction.channel.set_permissions(
                 staff_role,
                 read_messages=True,
-                send_messages=True,
+                send_messages=True
             )
 
         transcript = await self.create_transcript(interaction.channel)
@@ -98,25 +95,26 @@ class TicketButtonsView(View):
             if log_channel:
                 file = discord.File(
                     io.BytesIO(transcript.encode("utf-8")),
-                    filename=f"ticket-{t_id}-transcript.txt",
+                    filename=f"ticket-{t_id}-transcript.txt"
                 )
 
                 await log_channel.send(
                     content=f"📄 Transcript for ticket `{t_id}`",
-                    file=file,
+                    file=file
                 )
 
         await interaction.channel.edit(name=f"closed-{t_id}")
 
         await interaction.response.send_message(
             "Ticket closed.",
-            ephemeral=True,
+            ephemeral=True
         )
+
 
     @discord.ui.button(
         label="Claim",
         style=discord.ButtonStyle.green,
-        custom_id="ticket_claim",
+        custom_id="ticket_claim"
     )
     async def claim(self, interaction: discord.Interaction, button: discord.Button):
         cfg = get_guild_config(interaction.guild.id)
@@ -131,19 +129,19 @@ class TicketButtonsView(View):
         if not staff_role or staff_role not in interaction.user.roles:
             await interaction.response.send_message(
                 "You don't have permission.",
-                ephemeral=True,
+                ephemeral=True
             )
             return
 
         row = get_ticket_by_channel(
             interaction.guild.id,
-            interaction.channel.id,
+            interaction.channel.id
         )
 
         if not row:
             await interaction.response.send_message(
                 "Not a ticket channel.",
-                ephemeral=True,
+                ephemeral=True
             )
             return
 
@@ -151,28 +149,29 @@ class TicketButtonsView(View):
 
         await interaction.response.send_message(
             f"Ticket claimed by {interaction.user.mention}",
-            ephemeral=True,
+            ephemeral=True
         )
+
 
     @discord.ui.button(
         label="Transcript",
         style=discord.ButtonStyle.blurple,
-        custom_id="ticket_transcript",
+        custom_id="ticket_transcript"
     )
     async def transcript(
         self,
         interaction: discord.Interaction,
-        button: discord.Button,
+        button: discord.Button
     ):
         row = get_ticket_by_channel(
             interaction.guild.id,
-            interaction.channel.id,
+            interaction.channel.id
         )
 
         if not row:
             await interaction.response.send_message(
                 "Not a ticket channel.",
-                ephemeral=True,
+                ephemeral=True
             )
             return
 
@@ -181,7 +180,7 @@ class TicketButtonsView(View):
         if not cfg:
             await interaction.response.send_message(
                 "Ticket configuration was not found.",
-                ephemeral=True,
+                ephemeral=True
             )
             return
 
@@ -190,7 +189,7 @@ class TicketButtonsView(View):
         if not log_channel_id:
             await interaction.response.send_message(
                 "No transcript/log channel is configured.",
-                ephemeral=True,
+                ephemeral=True
             )
             return
 
@@ -198,8 +197,8 @@ class TicketButtonsView(View):
 
         if not log_channel:
             await interaction.response.send_message(
-                "The configured transcript/log channel no longer exists or I cannot access it.",
-                ephemeral=True,
+                "The configured transcript/log channel does not exist or I cannot access it.",
+                ephemeral=True
             )
             return
 
@@ -209,7 +208,7 @@ class TicketButtonsView(View):
 
         file = discord.File(
             io.BytesIO(transcript.encode("utf-8")),
-            filename=f"ticket-{row[0]}-transcript.txt",
+            filename=f"ticket-{row[0]}-transcript.txt"
         )
 
         await log_channel.send(
@@ -219,35 +218,39 @@ class TicketButtonsView(View):
                 f"Channel: {interaction.channel.mention}\n"
                 f"Created by: {interaction.user.mention}"
             ),
-            file=file,
+            file=file
         )
 
         await interaction.followup.send(
             f"✅ Transcript sent to {log_channel.mention}.",
-            ephemeral=True,
+            ephemeral=True
         )
+
 
     @discord.ui.button(
         label="Delete",
         style=discord.ButtonStyle.grey,
-        custom_id="ticket_delete",
+        custom_id="ticket_delete"
     )
-    async def delete(self, interaction: discord.Interaction, button: discord.Button):
+    async def delete(
+        self,
+        interaction: discord.Interaction,
+        button: discord.Button
+    ):
         row = get_ticket_by_channel(
             interaction.guild.id,
-            interaction.channel.id,
+            interaction.channel.id
         )
 
         if not row:
             await interaction.response.send_message(
                 "Not a ticket channel.",
-                ephemeral=True,
+                ephemeral=True
             )
             return
 
         delete_ticket(row[0])
 
         await interaction.channel.delete(
-            reason=f"Ticket deleted by {interaction.user}",
+            reason=f"Ticket deleted by {interaction.user}"
         )
-```
